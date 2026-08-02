@@ -1,0 +1,4 @@
+go.work
+.env
+.env.local
+.env.production
