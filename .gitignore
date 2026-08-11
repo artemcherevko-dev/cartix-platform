@@ -1,4 +1,6 @@
 go.work
+go.work.sum
 .env
 .env.local
 .env.production
+.idea/

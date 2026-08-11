@@ -17,3 +17,29 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
+  nats:
+    image: nats:latest
+    container_name: nats-server
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+      - "6222:6222"
+    volumes:
+      - nats_data:/data
+    command: [ "-js", "-sd", "/data", "-m", "8222" ]
+    restart: unless-stopped
+
+  gateway:
+    build:
+      context: ./services/gateway
+      dockerfile: Dockerfile
+    container_name: api-gateway
+    ports:
+      - "80:3000"
+    restart: unless-stopped
+
+volumes:
+  redis_data:
+  postgres_data:
+  nats_data:
+
