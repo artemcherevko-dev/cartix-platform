@@ -1,7 +1,7 @@
 package jwt
 
 import (
-	"auth/cmd/internal/db"
+	"auth/internal/app/db"
 	"crypto/rand"
 	"encoding/base64"
 	"os"

@@ -1,10 +1,10 @@
 package server
 
 import (
-	"auth/cmd/internal/app"
-	"auth/cmd/internal/app/nats"
-	"auth/cmd/internal/config"
-	"auth/cmd/internal/db"
+	"auth/internal/app"
+	"auth/internal/app/config"
+	"auth/internal/app/db"
+	"auth/internal/app/nats"
 	"context"
 	"fmt"
 	"log"

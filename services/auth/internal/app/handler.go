@@ -1,10 +1,10 @@
 package app
 
 import (
-	"auth/cmd/internal/app/jwt"
-	"auth/cmd/internal/app/nats"
-	"auth/cmd/internal/db"
-	"auth/cmd/internal/lib"
+	"auth/internal/app/db"
+	jwt2 "auth/internal/app/jwt"
+	"auth/internal/app/lib"
+	"auth/internal/app/nats"
 	"context"
 	"errors"
 	"log"
@@ -56,7 +56,7 @@ func (h *Handler) Register(ctx context.Context, req *authpb.RegisterReq) (*authp
 		return nil, err
 	}
 
-	access, refresh, err := jwt.GenerateTokenPair(user.ID.String(), user.Role)
+	access, refresh, err := jwt2.GenerateTokenPair(user.ID.String(), user.Role)
 	if err != nil {
 		return nil, err
 	}
@@ -147,7 +147,7 @@ func (h *Handler) Refresh(ctx context.Context, req *authpb.RefreshReq) (*authpb.
 		return nil, err
 	}
 
-	access, refresh, err := jwt.GenerateTokenPair(user.ID.String(), user.Role)
+	access, refresh, err := jwt2.GenerateTokenPair(user.ID.String(), user.Role)
 	if err != nil {
 		return nil, err
 	}
@@ -165,7 +165,7 @@ func (h *Handler) Refresh(ctx context.Context, req *authpb.RefreshReq) (*authpb.
 }
 
 func (h *Handler) Validate(ctx context.Context, req *authpb.ValidateTokenReq) (*authpb.ValidateTokenRes, error) {
-	claims, err := jwt.ParseAccessToken(req.AccessToken)
+	claims, err := jwt2.ParseAccessToken(req.AccessToken)
 	if err != nil {
 		return nil, err
 	}
@@ -204,7 +204,7 @@ func getSessionMetadata(ctx context.Context) (ip, userAgent string) {
 
 func newAuthSession(ctx context.Context, user *db.User) (string, string, db.AuthSessionDTO, error) {
 
-	access, refresh, err := jwt.GenerateTokenPair(user.ID.String(), user.Role)
+	access, refresh, err := jwt2.GenerateTokenPair(user.ID.String(), user.Role)
 	if err != nil {
 		return "", "", db.AuthSessionDTO{}, err
 	}

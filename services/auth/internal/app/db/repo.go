@@ -1,7 +1,7 @@
 package db
 
 import (
-	"auth/cmd/internal/lib"
+	"auth/internal/app/lib"
 	"context"
 	"log"
 	"time"

@@ -14,7 +14,7 @@ RUN CGO_ENABLED=0 GOOS=linux \
     go build \
     -ldflags="-s -w" \
     -o /app/server \
-    ./services/auth/cmd/
+    ./services/auth/internal/cmd/
 
 FROM alpine:3.20
 
