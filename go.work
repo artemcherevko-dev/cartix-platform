@@ -1,0 +1,10 @@
+go 1.26.5
+
+use (
+	./pkg/nats
+	./proto
+	./services/auth
+	./services/gateway
+	./services/profile
+	./shared
+)
