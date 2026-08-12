@@ -1,0 +1,4 @@
+CREATE DATABASE auth;
+-- CREATE DATABASE profile;
+-- CREATE DATABASE orders;
+-- CREATE DATABASE payments;

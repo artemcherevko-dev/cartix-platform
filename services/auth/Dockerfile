@@ -14,11 +14,13 @@ RUN CGO_ENABLED=0 GOOS=linux \
     go build \
     -ldflags="-s -w" \
     -o /app/server \
-    ./services/gateway/cmd/
+    ./services/auth/cmd/
 
 FROM alpine:3.20
 
-RUN apk --no-cache add ca-certificates
+RUN apk --no-cache add \
+    ca-certificates \
+    tzdata
 
 WORKDIR /app
 

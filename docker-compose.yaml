@@ -4,17 +4,18 @@ services:
     container_name: shop-postgres
     environment:
       POSTGRES_DB: shop
-      POSTGRES_USER: shop
-      POSTGRES_PASSWORD: shop
+      POSTGRES_PASSWORD: postgres
     ports:
-      - "5432:5432"
+      - "5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql
+      - ./deployments/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+
   redis:
     image: redis:latest
     container_name: shop-redis
     ports:
-      - "6379:6379"
+      - "6379"
     volumes:
       - redis_data:/data
   nats:
@@ -29,13 +30,32 @@ services:
     command: [ "-js", "-sd", "/data", "-m", "8222" ]
     restart: unless-stopped
 
+  auth-service:
+    build:
+      context: .
+      dockerfile: ./services/auth/Dockerfile
+    container_name: auth-service
+    env_file:
+      - .env
+    links:
+      - postgres
+      - redis
+      - nats
+    ports:
+      - "${GRPC_AUTH_PORT}"
+    restart: unless-stopped
+
   gateway:
     build:
-      context: ./services/gateway
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./services/gateway/Dockerfile
     container_name: api-gateway
+    env_file:
+      - .env
+    links:
+      - auth-service
     ports:
-      - "80:3000"
+      - "80:${GATEWAY_PORT}"
     restart: unless-stopped
 
 volumes:

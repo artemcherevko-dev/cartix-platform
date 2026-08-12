@@ -1,8 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"gateway/cmd/internal/app"
 	"log"
+	"os"
 
 	"github.com/joho/godotenv"
 )
@@ -10,7 +12,11 @@ import (
 func main() {
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatal("Error loading .env file")
+		log.Println("Error loading .env file")
 	}
-	app.Run("3000")
+	port := os.Getenv("GATEWAY_PORT")
+	if port == "" {
+		port = "3000"
+	}
+	app.Run(fmt.Sprintf("%s", port))
 }

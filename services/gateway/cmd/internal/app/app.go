@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"gateway/cmd/internal/app/middleware"
 	"log"
+	"os"
 	authpb "proto/auth"
 
 	"github.com/gin-gonic/gin"
@@ -16,7 +17,7 @@ func Run(addr string) {
 	r.SetTrustedProxies([]string{"127.0.0.1"})
 
 	authConn, err := grpc.NewClient(
-		"localhost:3001",
+		os.Getenv("AUTH_SERVICE_URL"),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 	if err != nil {
