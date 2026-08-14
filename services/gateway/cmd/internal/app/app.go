@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	authpb "proto/auth"
+	profilepb "proto/profile"
 
 	"github.com/gin-gonic/gin"
 	"google.golang.org/grpc"
@@ -14,7 +15,10 @@ import (
 
 func Run(addr string) {
 	r := gin.Default()
-	r.SetTrustedProxies([]string{"127.0.0.1"})
+	err := r.SetTrustedProxies([]string{"127.0.0.1"})
+	if err != nil {
+		return
+	}
 
 	authConn, err := grpc.NewClient(
 		os.Getenv("AUTH_SERVICE_URL"),
@@ -23,10 +27,30 @@ func Run(addr string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer authConn.Close()
+	defer func(authConn *grpc.ClientConn) {
+		err := authConn.Close()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}(authConn)
 	authClient := authpb.NewAuthClient(authConn)
 
-	handler := NewHandler(authClient)
+	profileConn, err := grpc.NewClient(
+		os.Getenv("PROFILE_SERVICE_URL"),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer func(profileConn *grpc.ClientConn) {
+		err := profileConn.Close()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}(profileConn)
+	profileClient := profilepb.NewProfileClient(profileConn)
+
+	handler := NewHandler(authClient, profileClient)
 
 	v1 := r.Group("/v1")
 	{
@@ -44,6 +68,11 @@ func Run(addr string) {
 			protected.GET("/test", func(c *gin.Context) {
 				c.JSON(200, gin.H{"message": "Hello"})
 			})
+			profile := protected.Group("profile")
+			{
+				profile.GET("/", handler.GetProfile)
+				profile.POST("/", handler.UpdateProfile)
+			}
 		}
 	}
 

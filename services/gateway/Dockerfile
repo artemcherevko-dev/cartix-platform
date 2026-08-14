@@ -8,6 +8,7 @@ COPY pkg/nats ./pkg/nats
 COPY proto ./proto
 COPY shared ./shared
 COPY services/auth ./services/auth
+COPY services/profile ./services/profile
 COPY services/gateway ./services/gateway
 
 RUN CGO_ENABLED=0 GOOS=linux \

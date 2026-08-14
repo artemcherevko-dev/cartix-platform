@@ -17,19 +17,6 @@ services:
       - postgres_data:/var/lib/postgresql
       - ./deployments/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
 
-  redis:
-    image: redis:latest
-    container_name: shop-redis
-    ports:
-      - "6379"
-    healthcheck:
-      test: [ "CMD", "redis-cli", "ping" ]
-      interval: 5s
-      timeout: 3s
-      retries: 5
-      start_period: 5s
-    volumes:
-      - redis_data:/data
   nats:
     image: nats:latest
     container_name: nats-server
@@ -48,16 +35,30 @@ services:
       dockerfile: ./services/auth/Dockerfile
     container_name: auth-service
     env_file:
-      - .env
+      - .env.prod
     depends_on:
       postgres:
-        condition: service_healthy
-      redis:
         condition: service_healthy
       nats:
         condition: service_started
     ports:
       - "${GRPC_AUTH_PORT}"
+    restart: unless-stopped
+
+  profile-service:
+    build:
+      context: .
+      dockerfile: ./services/profile/Dockerfile
+    container_name: profile-service
+    env_file:
+      - .env.prod
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_started
+    ports:
+      - "${GRPC_PROFILE_PORT}"
     restart: unless-stopped
 
   gateway:
@@ -66,9 +67,11 @@ services:
       dockerfile: ./services/gateway/Dockerfile
     container_name: api-gateway
     env_file:
-      - .env
+      - .env.prod
     depends_on:
       auth-service:
+        condition: service_started
+      profile-service:
         condition: service_started
     ports:
       - "80:${GATEWAY_PORT}"

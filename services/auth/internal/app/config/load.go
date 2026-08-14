@@ -20,7 +20,7 @@ func LoadConfig() *Config {
 	if err != nil {
 		log.Println("Error loading .env file")
 	}
-	dsnAuth, err := loadEnv("DB_DSN_AUTH")
+	dsnAuth, err := loadEnv("DSN_AUTH")
 	if err != nil {
 		log.Fatal(err)
 	}

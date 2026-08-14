@@ -11,6 +11,7 @@ import (
 	nats2 "nats"
 	"regexp"
 	"strings"
+	"time"
 
 	authpb "proto/auth"
 
@@ -35,22 +36,24 @@ func NewHandler(
 
 func (h *Handler) Register(ctx context.Context, req *authpb.RegisterReq) (*authpb.AuthRes, error) {
 	user, err := h.repo.CreateUser(db.RegisterDTO{
-		Email:     req.Email,
-		Password:  req.Password,
-		Phone:     req.Phone,
-		FirstName: req.FirstName,
-		LastName:  req.LastName,
+		Email:    req.Email,
+		Password: req.Password,
+		Phone:    req.Phone,
 	})
 	if err != nil {
 		return nil, err
 	}
 
+	dateOfBirth, err := time.Parse("02-01-2006", req.DateOfBirth)
+	if err != nil {
+		return nil, err
+	}
 	err = nats.PublishUserRegistered(ctx, h.nats, nats.UserRegistered{
-		UserID:    user.ID.String(),
-		Email:     req.Email,
-		Phone:     req.Phone,
-		FirstName: req.FirstName,
-		LastName:  req.LastName,
+		UserID:      user.ID.String(),
+		FirstName:   req.FirstName,
+		MiddleName:  req.MiddleName,
+		LastName:    req.LastName,
+		DateOfBirth: dateOfBirth,
 	})
 	if err != nil {
 		return nil, err

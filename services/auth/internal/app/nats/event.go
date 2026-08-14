@@ -3,8 +3,8 @@ package nats
 import (
 	"context"
 	"encoding/json"
-
 	natsclient "nats"
+	"time"
 )
 
 const (
@@ -12,11 +12,12 @@ const (
 )
 
 type UserRegistered struct {
-	UserID    string `json:"user_id"`
-	Email     string `json:"email"`
-	Phone     string `json:"phone"`
-	FirstName string `json:"first_name"`
-	LastName  string `json:"last_name"`
+	UserID     string `json:"user_id"`
+	FirstName  string `json:"first_name"`
+	MiddleName string `json:"middle_name"`
+	LastName   string `json:"last_name"`
+
+	DateOfBirth time.Time `json:"date_of_birth"`
 }
 
 func PublishUserRegistered(

@@ -4,28 +4,33 @@ import (
 	"context"
 	"net/http"
 	authpb "proto/auth"
+	profilepb "proto/profile"
 
 	"github.com/gin-gonic/gin"
 	"google.golang.org/grpc/metadata"
 )
 
 type Handler struct {
-	authClient authpb.AuthClient
+	authClient    authpb.AuthClient
+	profileClient profilepb.ProfileClient
 }
 
-func NewHandler(authClient authpb.AuthClient) *Handler {
+func NewHandler(authClient authpb.AuthClient, profileClient profilepb.ProfileClient) *Handler {
 	return &Handler{
-		authClient: authClient,
+		authClient:    authClient,
+		profileClient: profileClient,
 	}
 }
 
 func (h *Handler) Register(c *gin.Context) {
 	var req struct {
-		Email     string `json:"email"`
-		Password  string `json:"password"`
-		Phone     string `json:"phone"`
-		FirstName string `json:"first_name"`
-		LastName  string `json:"last_name"`
+		Email       string `json:"email"`
+		Password    string `json:"password"`
+		Phone       string `json:"phone"`
+		FirstName   string `json:"first_name"`
+		MiddleName  string `json:"middle_name"`
+		LastName    string `json:"last_name"`
+		DateOfBirth string `json:"date_of_birth"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -35,11 +40,13 @@ func (h *Handler) Register(c *gin.Context) {
 	ctx := contextWithMetaData(c)
 
 	tokens, err := h.authClient.Register(ctx, &authpb.RegisterReq{
-		FirstName: req.FirstName,
-		LastName:  req.LastName,
-		Email:     req.Email,
-		Password:  req.Password,
-		Phone:     req.Phone,
+		FirstName:   req.FirstName,
+		MiddleName:  req.MiddleName,
+		LastName:    req.LastName,
+		Email:       req.Email,
+		Password:    req.Password,
+		Phone:       req.Phone,
+		DateOfBirth: req.DateOfBirth,
 	})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -124,6 +131,53 @@ func (h *Handler) ValidateToken(c *gin.Context) {
 	}
 
 	c.JSON(200, gin.H{"status": "validated", "user": user.User})
+}
+
+func (h *Handler) GetProfile(c *gin.Context) {
+	userID := c.GetString("user_id")
+	if userID == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "user_id not exist"})
+		return
+	}
+
+	profile, err := h.profileClient.GetProfile(c.Request.Context(), &profilepb.GetProfileReq{UserId: userID})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(200, gin.H{"profile": profile})
+}
+
+func (h *Handler) UpdateProfile(c *gin.Context) {
+	userID := c.GetString("user_id")
+	if userID == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "user_id not exist"})
+		return
+	}
+
+	var input struct {
+		FirstName   *string `json:"first_name"`
+		MiddleName  *string `json:"middle_name"`
+		LastName    *string `json:"last_name"`
+		DateOfBirth *string `json:"date_of_birth"`
+	}
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	profile, err := h.profileClient.UpdateProfile(c.Request.Context(), &profilepb.UpdateProfileReq{
+		UserId:      userID,
+		FirstName:   input.FirstName,
+		MiddleName:  input.MiddleName,
+		LastName:    input.LastName,
+		DateOfBirth: input.DateOfBirth,
+	})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(200, gin.H{"profile": profile})
 }
 
 func contextWithMetaData(c *gin.Context) context.Context {
