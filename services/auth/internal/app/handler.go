@@ -53,6 +53,7 @@ func (h *Handler) Register(ctx context.Context, req *authpb.RegisterReq) (*authp
 		FirstName:   req.FirstName,
 		MiddleName:  req.MiddleName,
 		LastName:    req.LastName,
+		Email:       req.Email,
 		DateOfBirth: dateOfBirth,
 	})
 	if err != nil {

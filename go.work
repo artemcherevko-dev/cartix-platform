@@ -6,5 +6,6 @@ use (
 	./services/auth
 	./services/gateway
 	./services/profile
+	./services/notification
 	./shared
 )

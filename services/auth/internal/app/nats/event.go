@@ -16,6 +16,7 @@ type UserRegistered struct {
 	FirstName  string `json:"first_name"`
 	MiddleName string `json:"middle_name"`
 	LastName   string `json:"last_name"`
+	Email      string `json:"email"`
 
 	DateOfBirth time.Time `json:"date_of_birth"`
 }
