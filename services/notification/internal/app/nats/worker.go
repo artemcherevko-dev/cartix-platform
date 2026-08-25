@@ -23,18 +23,20 @@ func NewWorker(consumer jetstream.Consumer, mailer *Mailer) Worker {
 
 func (w *Worker) handle(msg jetstream.Msg, from string) error {
 	var event struct {
-		FirstName string `json:"first_name"`
-		LastName  string `json:"last_name"`
-		Email     string `json:"email"`
+		FirstName   string `json:"first_name"`
+		LastName    string `json:"last_name"`
+		Email       string `json:"email"`
+		VerifyToken string `json:"verify_token"`
 	}
 
 	if err := json.Unmarshal(msg.Data(), &event); err != nil {
 		return fmt.Errorf("unmarshal user.created event: %w", err)
 	}
 
-	if err := w.mailer.SendMail(from, event.Email, "Email confirmation", UserTemplateData{
-		FirstName: event.FirstName,
-		LastName:  event.LastName,
+	if err := w.mailer.SendMail(from, event.Email, "Confirm your email", UserTemplateData{
+		FirstName:        event.FirstName,
+		LastName:         event.LastName,
+		VerificationLink: w.mailer.VerificationLink(event.VerifyToken),
 	}); err != nil {
 		return fmt.Errorf("create profile: %w", err)
 	}

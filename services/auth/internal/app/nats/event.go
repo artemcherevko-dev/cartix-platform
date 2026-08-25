@@ -18,6 +18,8 @@ type UserRegistered struct {
 	LastName   string `json:"last_name"`
 	Email      string `json:"email"`
 
+	VerifyToken string `json:"verify_token,omitempty"`
+
 	DateOfBirth time.Time `json:"date_of_birth"`
 }
 

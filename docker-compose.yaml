@@ -29,6 +29,20 @@ services:
     command: [ "-js", "-sd", "/data", "-m", "8222" ]
     restart: unless-stopped
 
+  redis:
+    image: redis:latest
+    container_name: auth-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
   auth-service:
     build:
       context: .
@@ -41,6 +55,8 @@ services:
         condition: service_healthy
       nats:
         condition: service_started
+      redis:
+        condition: service_healthy
     ports:
       - "${GRPC_AUTH_PORT}"
     restart: unless-stopped

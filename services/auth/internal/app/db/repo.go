@@ -64,6 +64,16 @@ func (r *Repo) GetUserByPhone(ctx context.Context, phone string) (*User, error) 
 	return &user, nil
 }
 
+func (r *Repo) VerifyUser(ctx context.Context, id uuid.UUID) error {
+	if err := r.db.WithContext(ctx).Model(&User{}).Where("id = ?", id).Updates(map[string]any{
+		"email_verified": true,
+		"status":         UserStatusActive,
+	}).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
 func (r *Repo) CreateAuthSession(ctx context.Context, data AuthSessionDTO) error {
 	sessionID, err := uuid.NewV7()
 	if err != nil {

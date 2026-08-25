@@ -26,7 +26,6 @@ type User struct {
 	Phone         string     `json:"phone" gorm:"uniqueIndex;size:25;not null"`
 	PasswordHash  string     `json:"-" gorm:"not null"`
 	EmailVerified bool       `json:"email_verified" gorm:"not null;default:false"`
-	PhoneVerified bool       `json:"phone_verified" gorm:"not null;default:false"`
 	Status        UserStatus `json:"status" gorm:"type:varchar(20);not null;default:'pending'"`
 
 	Sessions []AuthSession `json:"sessions,omitempty" gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE;"`

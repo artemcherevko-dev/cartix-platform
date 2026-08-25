@@ -5,6 +5,7 @@ import (
 	jwt2 "auth/internal/app/jwt"
 	"auth/internal/app/lib"
 	"auth/internal/app/nats"
+	"auth/internal/app/verify"
 	"context"
 	"errors"
 	"log"
@@ -15,22 +16,26 @@ import (
 
 	authpb "proto/auth"
 
+	"github.com/google/uuid"
 	"google.golang.org/grpc/metadata"
 )
 
 type Handler struct {
 	authpb.UnimplementedAuthServer
-	repo *db.Repo
-	nats *nats2.Client
+	repo   *db.Repo
+	nats   *nats2.Client
+	verify *verify.Store
 }
 
 func NewHandler(
 	repo *db.Repo,
 	natsClient *nats2.Client,
+	verifyStore *verify.Store,
 ) *Handler {
 	return &Handler{
-		repo: repo,
-		nats: natsClient,
+		repo:   repo,
+		nats:   natsClient,
+		verify: verifyStore,
 	}
 }
 
@@ -48,12 +53,23 @@ func (h *Handler) Register(ctx context.Context, req *authpb.RegisterReq) (*authp
 	if err != nil {
 		return nil, err
 	}
+
+	verifyToken, err := lib.NewVerifyToken()
+	if err != nil {
+		return nil, err
+	}
+
+	if err := h.verify.SaveEmailToken(ctx, verifyToken, user.ID.String()); err != nil {
+		return nil, err
+	}
+
 	err = nats.PublishUserRegistered(ctx, h.nats, nats.UserRegistered{
 		UserID:      user.ID.String(),
 		FirstName:   req.FirstName,
 		MiddleName:  req.MiddleName,
 		LastName:    req.LastName,
 		Email:       req.Email,
+		VerifyToken: verifyToken,
 		DateOfBirth: dateOfBirth,
 	})
 	if err != nil {
@@ -186,10 +202,33 @@ func (h *Handler) Validate(ctx context.Context, req *authpb.ValidateTokenReq) (*
 		Phone: user.Phone,
 
 		EmailVerified: user.EmailVerified,
-		PhoneVerified: user.PhoneVerified,
 		Role:          string(user.Role),
 		Active:        active,
 	}}, nil
+}
+
+func (h *Handler) VerifyEmail(ctx context.Context, req *authpb.VerifyEmailReq) (*authpb.VerifyEmailRes, error) {
+	if req.Token == "" {
+		return nil, verify.ErrInvalidToken
+	}
+
+	userID, err := h.verify.ConsumeEmailToken(ctx, req.Token)
+	if err != nil {
+		return nil, err
+	}
+
+	id, err := uuid.Parse(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := h.repo.VerifyUser(ctx, id); err != nil {
+		return nil, err
+	}
+
+	log.Printf("[AUTH] Email verified for user %s", userID)
+
+	return &authpb.VerifyEmailRes{Verified: true}, nil
 }
 
 func getSessionMetadata(ctx context.Context) (ip, userAgent string) {

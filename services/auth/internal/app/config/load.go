@@ -4,6 +4,7 @@ import (
 	"errors"
 	"log"
 	"os"
+	"time"
 
 	"github.com/joho/godotenv"
 )
@@ -13,6 +14,9 @@ type Config struct {
 	JWTSecret    string
 	GRPCPortAuth string
 	NATSUrl      string
+	RedisUrl     string
+
+	VerifyEmailTokenTTL time.Duration
 }
 
 func LoadConfig() *Config {
@@ -36,12 +40,28 @@ func LoadConfig() *Config {
 	if err != nil {
 		log.Fatal(err)
 	}
+	redisURL, err := loadEnv("REDIS_URL")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	verifyTTL := 15 * time.Minute
+	if raw, ok := os.LookupEnv("VERIFY_EMAIL_TOKEN_TTL"); ok {
+		parsed, err := time.ParseDuration(raw)
+		if err != nil {
+			log.Fatal("invalid VERIFY_EMAIL_TOKEN_TTL: " + err.Error())
+		}
+		verifyTTL = parsed
+	}
 
 	return &Config{
 		DSNAuth:      dsnAuth,
 		JWTSecret:    jwt,
 		GRPCPortAuth: grpcAuth,
 		NATSUrl:      natsURL,
+		RedisUrl:     redisURL,
+
+		VerifyEmailTokenTTL: verifyTTL,
 	}
 }
 

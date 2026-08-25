@@ -60,6 +60,7 @@ func Run(addr string) {
 			auth.POST("/login", handler.Login)
 			auth.POST("/refresh", handler.Refresh)
 			auth.GET("/validate", handler.ValidateToken)
+			auth.GET("/verify", handler.VerifyEmail)
 		}
 		protected := v1.Group("")
 		protected.Use(middleware.Auth())

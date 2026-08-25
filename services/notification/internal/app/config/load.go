@@ -13,6 +13,8 @@ type Config struct {
 	SMTPUser string
 	SMTPPass string
 	FromMail string
+
+	AppURL string
 }
 
 func LoadConfig() *Config {
@@ -40,6 +42,10 @@ func LoadConfig() *Config {
 	if err != nil {
 		log.Fatal("FROM_MAIL env var not set")
 	}
+	appURL, err := loadEnv("APP_URL")
+	if err != nil {
+		log.Fatal("APP_URL env var not set")
+	}
 
 	return &Config{
 		NATSUrl:  natsUrl,
@@ -48,6 +54,8 @@ func LoadConfig() *Config {
 		SMTPUser: smtpUser,
 		SMTPPass: smtpPass,
 		FromMail: fromMail,
+
+		AppURL: appURL,
 	}
 }
 

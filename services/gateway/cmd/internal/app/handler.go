@@ -133,6 +133,24 @@ func (h *Handler) ValidateToken(c *gin.Context) {
 	c.JSON(200, gin.H{"status": "validated", "user": user.User})
 }
 
+func (h *Handler) VerifyEmail(c *gin.Context) {
+	token := c.Query("token")
+	if token == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "token is required"})
+		return
+	}
+
+	res, err := h.authClient.VerifyEmail(c.Request.Context(), &authpb.VerifyEmailReq{
+		Token: token,
+	})
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(200, gin.H{"status": "email verified", "verified": res.Verified})
+}
+
 func (h *Handler) GetProfile(c *gin.Context) {
 	userID := c.GetString("user_id")
 	if userID == "" {

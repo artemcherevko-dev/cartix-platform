@@ -10,6 +10,8 @@ service Auth {
   rpc Refresh (RefreshReq) returns (AuthRes);
 
   rpc Validate (ValidateTokenReq) returns (ValidateTokenRes);
+
+  rpc VerifyEmail (VerifyEmailReq) returns (VerifyEmailRes);
 }
 
 message RegisterReq {
@@ -38,10 +40,9 @@ message UserRes {
   string phone = 3;
 
   bool email_verified = 4;
-  bool phone_verified = 5;
 
-  string role = 6;
-  bool active = 7;
+  string role = 5;
+  bool active = 6;
 }
 
 message ValidateTokenReq {
@@ -54,4 +55,12 @@ message RefreshReq {
 
 message ValidateTokenRes {
   UserRes user = 1;
+}
+
+message VerifyEmailReq {
+  string token = 1;
+}
+
+message VerifyEmailRes {
+  bool verified = 1;
 }
