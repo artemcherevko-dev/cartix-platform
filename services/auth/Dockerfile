@@ -5,17 +5,22 @@ WORKDIR /app
 COPY go.work go.work.sum ./
 
 COPY pkg/nats ./pkg/nats
+COPY pkg/redis ./pkg/redis
 COPY proto ./proto
 COPY shared ./shared
 COPY services/auth ./services/auth
-COPY services/profile ./services/profile
+COPY services/catalog ./services/catalog
 COPY services/gateway ./services/gateway
+COPY services/notification ./services/notification
+COPY services/order ./services/order
+COPY services/payments ./services/payments
+COPY services/profile ./services/profile
 
 RUN CGO_ENABLED=0 GOOS=linux \
     go build \
     -ldflags="-s -w" \
     -o /app/server \
-    ./services/auth/internal/cmd/
+    ./services/auth/cmd/
 
 FROM alpine:3.20
 

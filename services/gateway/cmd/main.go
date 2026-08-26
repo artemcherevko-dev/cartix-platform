@@ -1,8 +1,7 @@
 package main
 
 import (
-	"fmt"
-	"gateway/cmd/internal/app"
+	"gateway/internal/server"
 	"log"
 	"os"
 
@@ -18,5 +17,5 @@ func main() {
 	if port == "" {
 		port = "3000"
 	}
-	app.Run(fmt.Sprintf("%s", port))
+	server.Run(port)
 }

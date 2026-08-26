@@ -8,5 +8,8 @@ use (
 	./services/gateway
 	./services/profile
 	./services/notification
+	./services/payments
+	./services/order
+	./services/catalog
 	./shared
 )

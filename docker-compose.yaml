@@ -21,9 +21,9 @@ services:
     image: nats:latest
     container_name: nats-server
     ports:
-      - "4222:4222"
-      - "8222:8222"
-      - "6222:6222"
+      - "4222"
+      - "8222"
+      - "6222"
     volumes:
       - nats_data:/data
     command: [ "-js", "-sd", "/data", "-m", "8222" ]
@@ -77,6 +77,73 @@ services:
       - "${GRPC_PROFILE_PORT}"
     restart: unless-stopped
 
+  catalog-service:
+    build:
+      context: .
+      dockerfile: ./services/catalog/Dockerfile
+    container_name: catalog-service
+    env_file:
+      - .env.prod
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "${GRPC_CATALOG_PORT}"
+    restart: unless-stopped
+
+  payments-service:
+    build:
+      context: .
+      dockerfile: ./services/payments/Dockerfile
+    container_name: payments-service
+    env_file:
+      - .env.prod
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_started
+    ports:
+      - "${GRPC_PAYMENTS_PORT}:${GRPC_PAYMENTS_PORT}"
+      - "${PAYMENTS_HTTP_PORT}:${PAYMENTS_HTTP_PORT}"
+    restart: unless-stopped
+
+  order-service:
+    build:
+      context: .
+      dockerfile: ./services/order/Dockerfile
+    container_name: order-service
+    env_file:
+      - .env.prod
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_started
+      catalog-service:
+        condition: service_started
+      payments-service:
+        condition: service_started
+    ports:
+      - "${GRPC_ORDER_PORT}"
+    restart: unless-stopped
+
+  notification-service:
+    build:
+      context: .
+      dockerfile: ./services/notification/Dockerfile
+    container_name: notification-service
+    env_file:
+      - .env.prod
+    depends_on:
+      nats:
+        condition: service_started
+      redis:
+        condition: service_healthy
+      order-service:
+        condition: service_started
+    restart: unless-stopped
+
   gateway:
     build:
       context: .
@@ -89,6 +156,14 @@ services:
         condition: service_started
       profile-service:
         condition: service_started
+      catalog-service:
+        condition: service_started
+      payments-service:
+        condition: service_started
+      order-service:
+        condition: service_started
+      notification-service:
+        condition: service_started
     ports:
       - "80:${GATEWAY_PORT}"
     restart: unless-stopped
@@ -97,4 +172,3 @@ volumes:
   redis_data:
   postgres_data:
   nats_data:
-

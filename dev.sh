@@ -28,9 +28,12 @@ build() {
 }
 
 build gateway gateway ./cmd
-build auth auth ./internal/cmd
-build profile profile ./internal/cmd
+build auth auth ./cmd
+build profile profile ./cmd
 build notification notification ./cmd
+build payments payments ./cmd
+build order order ./cmd
+build catalog catalog ./cmd
 
 start() {
 	local name="$1"
@@ -60,6 +63,10 @@ sleep 1
 start auth
 start profile
 start notification
+start payments
+sleep 1
+start catalog
+start order
 
 echo "[dev] all services running. Press Ctrl+C to stop."
 while true; do

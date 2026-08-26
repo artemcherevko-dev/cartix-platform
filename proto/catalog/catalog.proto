@@ -1,0 +1,81 @@
+syntax = "proto3";
+
+option go_package = "proto/catalog;catalogpb";
+
+import "google/protobuf/struct.proto";
+
+service Catalog {
+  rpc GetProduct (GetProductReq) returns (ProductRes);
+
+  rpc GetProducts (GetProductsReq) returns (GetProductsRes);
+
+  rpc ListProducts (ListProductsReq) returns (ListProductsRes);
+
+  rpc CreateProduct (CreateProductReq) returns (ProductRes);
+
+  rpc UpdateProduct (UpdateProductReq) returns (ProductRes);
+
+  rpc DeleteProduct (DeleteProductReq) returns (DeleteProductRes);
+}
+
+message GetProductReq {
+  string id = 1;
+}
+
+message GetProductsReq {
+  repeated string ids = 1;
+}
+
+message ProductRes {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  int64 price_minor = 4;
+  string currency = 5;
+  string category = 6;
+  google.protobuf.Struct attributes = 7;
+  bool active = 8;
+}
+
+message GetProductsRes {
+  repeated ProductRes products = 1;
+}
+
+message ListProductsReq {
+  int32 page = 1;
+  int32 page_size = 2;
+}
+
+message ListProductsRes {
+  repeated ProductRes products = 1;
+  int32 total = 2;
+}
+
+message CreateProductReq {
+  string name = 1;
+  string description = 2;
+  int64 price_minor = 3;
+  string currency = 4;
+  string category = 5;
+  google.protobuf.Struct attributes = 6;
+  bool active = 7;
+}
+
+message UpdateProductReq {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  int64 price_minor = 4;
+  string currency = 5;
+  string category = 6;
+  google.protobuf.Struct attributes = 7;
+  bool active = 8;
+}
+
+message DeleteProductReq {
+  string id = 1;
+}
+
+message DeleteProductRes {
+  bool deleted = 1;
+}
