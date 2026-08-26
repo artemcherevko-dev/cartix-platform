@@ -3,3 +3,4 @@
 .env.prod
 .idea/
 .dev-bin/
+kilo.json
