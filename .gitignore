@@ -1,6 +1,6 @@
-go.work
-go.work.sum
 .env
 .env.local
-.env.production
+.env.prod
 .idea/
+.dev-bin/
+kilo.json

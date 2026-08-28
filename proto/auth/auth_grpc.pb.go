@@ -19,10 +19,11 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Auth_Register_FullMethodName = "/Auth/Register"
-	Auth_Login_FullMethodName    = "/Auth/Login"
-	Auth_Refresh_FullMethodName  = "/Auth/Refresh"
-	Auth_Validate_FullMethodName = "/Auth/Validate"
+	Auth_Register_FullMethodName    = "/Auth/Register"
+	Auth_Login_FullMethodName       = "/Auth/Login"
+	Auth_Refresh_FullMethodName     = "/Auth/Refresh"
+	Auth_Validate_FullMethodName    = "/Auth/Validate"
+	Auth_VerifyEmail_FullMethodName = "/Auth/VerifyEmail"
 )
 
 // AuthClient is the client API for Auth service.
@@ -33,6 +34,7 @@ type AuthClient interface {
 	Login(ctx context.Context, in *LoginReq, opts ...grpc.CallOption) (*AuthRes, error)
 	Refresh(ctx context.Context, in *RefreshReq, opts ...grpc.CallOption) (*AuthRes, error)
 	Validate(ctx context.Context, in *ValidateTokenReq, opts ...grpc.CallOption) (*ValidateTokenRes, error)
+	VerifyEmail(ctx context.Context, in *VerifyEmailReq, opts ...grpc.CallOption) (*VerifyEmailRes, error)
 }
 
 type authClient struct {
@@ -83,6 +85,16 @@ func (c *authClient) Validate(ctx context.Context, in *ValidateTokenReq, opts ..
 	return out, nil
 }
 
+func (c *authClient) VerifyEmail(ctx context.Context, in *VerifyEmailReq, opts ...grpc.CallOption) (*VerifyEmailRes, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(VerifyEmailRes)
+	err := c.cc.Invoke(ctx, Auth_VerifyEmail_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AuthServer is the server API for Auth service.
 // All implementations must embed UnimplementedAuthServer
 // for forward compatibility.
@@ -91,6 +103,7 @@ type AuthServer interface {
 	Login(context.Context, *LoginReq) (*AuthRes, error)
 	Refresh(context.Context, *RefreshReq) (*AuthRes, error)
 	Validate(context.Context, *ValidateTokenReq) (*ValidateTokenRes, error)
+	VerifyEmail(context.Context, *VerifyEmailReq) (*VerifyEmailRes, error)
 	mustEmbedUnimplementedAuthServer()
 }
 
@@ -112,6 +125,9 @@ func (UnimplementedAuthServer) Refresh(context.Context, *RefreshReq) (*AuthRes, 
 }
 func (UnimplementedAuthServer) Validate(context.Context, *ValidateTokenReq) (*ValidateTokenRes, error) {
 	return nil, status.Error(codes.Unimplemented, "method Validate not implemented")
+}
+func (UnimplementedAuthServer) VerifyEmail(context.Context, *VerifyEmailReq) (*VerifyEmailRes, error) {
+	return nil, status.Error(codes.Unimplemented, "method VerifyEmail not implemented")
 }
 func (UnimplementedAuthServer) mustEmbedUnimplementedAuthServer() {}
 func (UnimplementedAuthServer) testEmbeddedByValue()              {}
@@ -206,6 +222,24 @@ func _Auth_Validate_Handler(srv interface{}, ctx context.Context, dec func(inter
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Auth_VerifyEmail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(VerifyEmailReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServer).VerifyEmail(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Auth_VerifyEmail_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServer).VerifyEmail(ctx, req.(*VerifyEmailReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Auth_ServiceDesc is the grpc.ServiceDesc for Auth service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -228,6 +262,10 @@ var Auth_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Validate",
 			Handler:    _Auth_Validate_Handler,
+		},
+		{
+			MethodName: "VerifyEmail",
+			Handler:    _Auth_VerifyEmail_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

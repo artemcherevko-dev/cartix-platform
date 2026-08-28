@@ -1,8 +1,8 @@
 package main
 
 import (
-	"auth/cmd/internal/config"
-	"auth/cmd/server"
+	"auth/internal/config"
+	"auth/internal/server"
 )
 
 func main() {

@@ -1,0 +1,146 @@
+syntax = "proto3";
+
+option go_package = "proto/order;orderpb";
+
+service Order {
+  rpc CreateOrder (CreateOrderReq) returns (CreateOrderRes);
+
+  rpc GetOrder (GetOrderReq) returns (OrderRes);
+
+  rpc ListOrders (ListOrdersReq) returns (ListOrdersRes);
+
+  rpc AdminListOrders (AdminListOrdersReq) returns (ListOrdersRes);
+
+  rpc AdminGetOrder (AdminGetOrderReq) returns (OrderRes);
+
+  rpc AdminDeleteOrder (AdminDeleteOrderReq) returns (AdminDeleteOrderRes);
+
+  rpc AdminUpdateOrderStatus (AdminUpdateOrderStatusReq) returns (OrderRes);
+
+  rpc GetCart (GetCartReq) returns (CartRes);
+
+  rpc AddToCart (AddToCartReq) returns (CartRes);
+
+  rpc UpdateCartItem (UpdateCartItemReq) returns (CartRes);
+
+  rpc ClearCart (ClearCartReq) returns (ClearCartRes);
+
+  rpc CheckoutCart (CheckoutCartReq) returns (CreateOrderRes);
+}
+
+message OrderItemInput {
+  string product_id = 1;
+  int32 quantity = 2;
+}
+
+message CreateOrderReq {
+  string user_id = 1;
+  string email = 2;
+  repeated OrderItemInput items = 3;
+}
+
+message CreateOrderRes {
+  string order_id = 1;
+  string status = 2;
+  string currency = 3;
+  int64 subtotal_minor = 4;
+  int64 total_minor = 5;
+  string payment_id = 6;
+  string checkout_url = 7;
+}
+
+message GetOrderReq {
+  string order_id = 1;
+  string user_id = 2;
+}
+
+message OrderItemRes {
+  string product_id = 1;
+  string name = 2;
+  int32 quantity = 3;
+  int64 unit_price_minor = 4;
+}
+
+message OrderRes {
+  string id = 1;
+  string user_id = 2;
+  string status = 3;
+  string currency = 4;
+  int64 subtotal_minor = 5;
+  int64 total_minor = 6;
+  string payment_id = 7;
+  string checkout_url = 8;
+  repeated OrderItemRes items = 9;
+  string created_at = 10;
+  string paid_at = 11;
+}
+
+message ListOrdersReq {
+  string user_id = 1;
+}
+
+message ListOrdersRes {
+  repeated OrderRes orders = 1;
+}
+
+message AdminListOrdersReq {
+  string user_id = 1;
+}
+
+message AdminGetOrderReq {
+  string order_id = 1;
+}
+
+message AdminDeleteOrderReq {
+  string order_id = 1;
+}
+
+message AdminDeleteOrderRes {
+  bool deleted = 1;
+}
+
+message AdminUpdateOrderStatusReq {
+  string order_id = 1;
+  string status = 2;
+}
+
+message GetCartReq {
+  string user_id = 1;
+}
+
+message CartItemRes {
+  string product_id = 1;
+  string name = 2;
+  int32 quantity = 3;
+  int64 unit_price_minor = 4;
+}
+
+message CartRes {
+  repeated CartItemRes items = 1;
+  int64 subtotal_minor = 2;
+}
+
+message AddToCartReq {
+  string user_id = 1;
+  string product_id = 2;
+  int32 quantity = 3;
+}
+
+message UpdateCartItemReq {
+  string user_id = 1;
+  string product_id = 2;
+  int32 quantity = 3;
+}
+
+message ClearCartReq {
+  string user_id = 1;
+}
+
+message ClearCartRes {
+  bool cleared = 1;
+}
+
+message CheckoutCartReq {
+  string user_id = 1;
+  string email = 2;
+}

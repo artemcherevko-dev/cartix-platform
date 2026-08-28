@@ -1,0 +1,29 @@
+apiVersion: 1
+datasources:
+  - name: Cartix Orders
+    version: 1
+    type: grafana-postgresql-datasource
+    uid: orders-db
+    access: proxy
+    url: postgres:5432
+    user: postgres
+    jsonData: {database: orders, sslmode: disable}
+    secureJsonData: {password: $POSTGRES_PASSWORD}
+  - name: Cartix Payments
+    version: 1
+    type: grafana-postgresql-datasource
+    uid: payments-db
+    access: proxy
+    url: postgres:5432
+    user: postgres
+    jsonData: {database: payments, sslmode: disable}
+    secureJsonData: {password: $POSTGRES_PASSWORD}
+  - name: Cartix Catalog
+    version: 1
+    type: grafana-postgresql-datasource
+    uid: catalog-db
+    access: proxy
+    url: postgres:5432
+    user: postgres
+    jsonData: {database: catalog, sslmode: disable}
+    secureJsonData: {password: $POSTGRES_PASSWORD}

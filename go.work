@@ -1,0 +1,15 @@
+go 1.26.5
+
+use (
+	./pkg/nats
+	./pkg/redis
+	./proto
+	./services/auth
+	./services/gateway
+	./services/profile
+	./services/notification
+	./services/payments
+	./services/order
+	./services/catalog
+	./shared
+)

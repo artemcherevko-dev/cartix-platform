@@ -24,10 +24,12 @@ const (
 type RegisterReq struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	FirstName     string                 `protobuf:"bytes,1,opt,name=first_name,json=firstName,proto3" json:"first_name,omitempty"`
-	LastName      string                 `protobuf:"bytes,2,opt,name=last_name,json=lastName,proto3" json:"last_name,omitempty"`
-	Email         string                 `protobuf:"bytes,3,opt,name=email,proto3" json:"email,omitempty"`
-	Password      string                 `protobuf:"bytes,4,opt,name=password,proto3" json:"password,omitempty"`
-	Phone         string                 `protobuf:"bytes,5,opt,name=phone,proto3" json:"phone,omitempty"`
+	MiddleName    string                 `protobuf:"bytes,2,opt,name=middle_name,json=middleName,proto3" json:"middle_name,omitempty"`
+	LastName      string                 `protobuf:"bytes,3,opt,name=last_name,json=lastName,proto3" json:"last_name,omitempty"`
+	Email         string                 `protobuf:"bytes,4,opt,name=email,proto3" json:"email,omitempty"`
+	Password      string                 `protobuf:"bytes,5,opt,name=password,proto3" json:"password,omitempty"`
+	Phone         string                 `protobuf:"bytes,6,opt,name=phone,proto3" json:"phone,omitempty"`
+	DateOfBirth   string                 `protobuf:"bytes,7,opt,name=date_of_birth,json=dateOfBirth,proto3" json:"date_of_birth,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -69,6 +71,13 @@ func (x *RegisterReq) GetFirstName() string {
 	return ""
 }
 
+func (x *RegisterReq) GetMiddleName() string {
+	if x != nil {
+		return x.MiddleName
+	}
+	return ""
+}
+
 func (x *RegisterReq) GetLastName() string {
 	if x != nil {
 		return x.LastName
@@ -93,6 +102,13 @@ func (x *RegisterReq) GetPassword() string {
 func (x *RegisterReq) GetPhone() string {
 	if x != nil {
 		return x.Phone
+	}
+	return ""
+}
+
+func (x *RegisterReq) GetDateOfBirth() string {
+	if x != nil {
+		return x.DateOfBirth
 	}
 	return ""
 }
@@ -207,9 +223,8 @@ type UserRes struct {
 	Email         string                 `protobuf:"bytes,2,opt,name=email,proto3" json:"email,omitempty"`
 	Phone         string                 `protobuf:"bytes,3,opt,name=phone,proto3" json:"phone,omitempty"`
 	EmailVerified bool                   `protobuf:"varint,4,opt,name=email_verified,json=emailVerified,proto3" json:"email_verified,omitempty"`
-	PhoneVerified bool                   `protobuf:"varint,5,opt,name=phone_verified,json=phoneVerified,proto3" json:"phone_verified,omitempty"`
-	Role          string                 `protobuf:"bytes,6,opt,name=role,proto3" json:"role,omitempty"`
-	Active        bool                   `protobuf:"varint,7,opt,name=active,proto3" json:"active,omitempty"`
+	Role          string                 `protobuf:"bytes,5,opt,name=role,proto3" json:"role,omitempty"`
+	Active        bool                   `protobuf:"varint,6,opt,name=active,proto3" json:"active,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -268,13 +283,6 @@ func (x *UserRes) GetPhone() string {
 func (x *UserRes) GetEmailVerified() bool {
 	if x != nil {
 		return x.EmailVerified
-	}
-	return false
-}
-
-func (x *UserRes) GetPhoneVerified() bool {
-	if x != nil {
-		return x.PhoneVerified
 	}
 	return false
 }
@@ -425,44 +433,139 @@ func (x *ValidateTokenRes) GetUser() *UserRes {
 	return nil
 }
 
+type VerifyEmailReq struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Token         string                 `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *VerifyEmailReq) Reset() {
+	*x = VerifyEmailReq{}
+	mi := &file_proto_auth_auth_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *VerifyEmailReq) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VerifyEmailReq) ProtoMessage() {}
+
+func (x *VerifyEmailReq) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_auth_auth_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use VerifyEmailReq.ProtoReflect.Descriptor instead.
+func (*VerifyEmailReq) Descriptor() ([]byte, []int) {
+	return file_proto_auth_auth_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *VerifyEmailReq) GetToken() string {
+	if x != nil {
+		return x.Token
+	}
+	return ""
+}
+
+type VerifyEmailRes struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Verified      bool                   `protobuf:"varint,1,opt,name=verified,proto3" json:"verified,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *VerifyEmailRes) Reset() {
+	*x = VerifyEmailRes{}
+	mi := &file_proto_auth_auth_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *VerifyEmailRes) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VerifyEmailRes) ProtoMessage() {}
+
+func (x *VerifyEmailRes) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_auth_auth_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use VerifyEmailRes.ProtoReflect.Descriptor instead.
+func (*VerifyEmailRes) Descriptor() ([]byte, []int) {
+	return file_proto_auth_auth_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *VerifyEmailRes) GetVerified() bool {
+	if x != nil {
+		return x.Verified
+	}
+	return false
+}
+
 var File_proto_auth_auth_proto protoreflect.FileDescriptor
 
 const file_proto_auth_auth_proto_rawDesc = "" +
 	"\n" +
-	"\x15proto/auth/auth.proto\"\x91\x01\n" +
+	"\x15proto/auth/auth.proto\"\xd6\x01\n" +
 	"\vRegisterReq\x12\x1d\n" +
 	"\n" +
-	"first_name\x18\x01 \x01(\tR\tfirstName\x12\x1b\n" +
-	"\tlast_name\x18\x02 \x01(\tR\blastName\x12\x14\n" +
-	"\x05email\x18\x03 \x01(\tR\x05email\x12\x1a\n" +
-	"\bpassword\x18\x04 \x01(\tR\bpassword\x12\x14\n" +
-	"\x05phone\x18\x05 \x01(\tR\x05phone\"<\n" +
+	"first_name\x18\x01 \x01(\tR\tfirstName\x12\x1f\n" +
+	"\vmiddle_name\x18\x02 \x01(\tR\n" +
+	"middleName\x12\x1b\n" +
+	"\tlast_name\x18\x03 \x01(\tR\blastName\x12\x14\n" +
+	"\x05email\x18\x04 \x01(\tR\x05email\x12\x1a\n" +
+	"\bpassword\x18\x05 \x01(\tR\bpassword\x12\x14\n" +
+	"\x05phone\x18\x06 \x01(\tR\x05phone\x12\"\n" +
+	"\rdate_of_birth\x18\a \x01(\tR\vdateOfBirth\"<\n" +
 	"\bLoginReq\x12\x14\n" +
 	"\x05login\x18\x01 \x01(\tR\x05login\x12\x1a\n" +
 	"\bpassword\x18\x02 \x01(\tR\bpassword\"Q\n" +
 	"\aAuthRes\x12!\n" +
 	"\faccess_token\x18\x01 \x01(\tR\vaccessToken\x12#\n" +
-	"\rrefresh_token\x18\x02 \x01(\tR\frefreshToken\"\xbf\x01\n" +
+	"\rrefresh_token\x18\x02 \x01(\tR\frefreshToken\"\x98\x01\n" +
 	"\aUserRes\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05email\x18\x02 \x01(\tR\x05email\x12\x14\n" +
 	"\x05phone\x18\x03 \x01(\tR\x05phone\x12%\n" +
-	"\x0eemail_verified\x18\x04 \x01(\bR\remailVerified\x12%\n" +
-	"\x0ephone_verified\x18\x05 \x01(\bR\rphoneVerified\x12\x12\n" +
-	"\x04role\x18\x06 \x01(\tR\x04role\x12\x16\n" +
-	"\x06active\x18\a \x01(\bR\x06active\"5\n" +
+	"\x0eemail_verified\x18\x04 \x01(\bR\remailVerified\x12\x12\n" +
+	"\x04role\x18\x05 \x01(\tR\x04role\x12\x16\n" +
+	"\x06active\x18\x06 \x01(\bR\x06active\"5\n" +
 	"\x10ValidateTokenReq\x12!\n" +
 	"\faccess_token\x18\x01 \x01(\tR\vaccessToken\"1\n" +
 	"\n" +
 	"RefreshReq\x12#\n" +
 	"\rrefresh_token\x18\x01 \x01(\tR\frefreshToken\"0\n" +
 	"\x10ValidateTokenRes\x12\x1c\n" +
-	"\x04user\x18\x01 \x01(\v2\b.UserResR\x04user2\x9c\x01\n" +
+	"\x04user\x18\x01 \x01(\v2\b.UserResR\x04user\"&\n" +
+	"\x0eVerifyEmailReq\x12\x14\n" +
+	"\x05token\x18\x01 \x01(\tR\x05token\",\n" +
+	"\x0eVerifyEmailRes\x12\x1a\n" +
+	"\bverified\x18\x01 \x01(\bR\bverified2\xcd\x01\n" +
 	"\x04Auth\x12\"\n" +
 	"\bRegister\x12\f.RegisterReq\x1a\b.AuthRes\x12\x1c\n" +
 	"\x05Login\x12\t.LoginReq\x1a\b.AuthRes\x12 \n" +
 	"\aRefresh\x12\v.RefreshReq\x1a\b.AuthRes\x120\n" +
-	"\bValidate\x12\x11.ValidateTokenReq\x1a\x11.ValidateTokenResB\x13Z\x11proto/auth;authpbb\x06proto3"
+	"\bValidate\x12\x11.ValidateTokenReq\x1a\x11.ValidateTokenRes\x12/\n" +
+	"\vVerifyEmail\x12\x0f.VerifyEmailReq\x1a\x0f.VerifyEmailResB\x13Z\x11proto/auth;authpbb\x06proto3"
 
 var (
 	file_proto_auth_auth_proto_rawDescOnce sync.Once
@@ -476,7 +579,7 @@ func file_proto_auth_auth_proto_rawDescGZIP() []byte {
 	return file_proto_auth_auth_proto_rawDescData
 }
 
-var file_proto_auth_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_proto_auth_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_proto_auth_auth_proto_goTypes = []any{
 	(*RegisterReq)(nil),      // 0: RegisterReq
 	(*LoginReq)(nil),         // 1: LoginReq
@@ -485,6 +588,8 @@ var file_proto_auth_auth_proto_goTypes = []any{
 	(*ValidateTokenReq)(nil), // 4: ValidateTokenReq
 	(*RefreshReq)(nil),       // 5: RefreshReq
 	(*ValidateTokenRes)(nil), // 6: ValidateTokenRes
+	(*VerifyEmailReq)(nil),   // 7: VerifyEmailReq
+	(*VerifyEmailRes)(nil),   // 8: VerifyEmailRes
 }
 var file_proto_auth_auth_proto_depIdxs = []int32{
 	3, // 0: ValidateTokenRes.user:type_name -> UserRes
@@ -492,12 +597,14 @@ var file_proto_auth_auth_proto_depIdxs = []int32{
 	1, // 2: Auth.Login:input_type -> LoginReq
 	5, // 3: Auth.Refresh:input_type -> RefreshReq
 	4, // 4: Auth.Validate:input_type -> ValidateTokenReq
-	2, // 5: Auth.Register:output_type -> AuthRes
-	2, // 6: Auth.Login:output_type -> AuthRes
-	2, // 7: Auth.Refresh:output_type -> AuthRes
-	6, // 8: Auth.Validate:output_type -> ValidateTokenRes
-	5, // [5:9] is the sub-list for method output_type
-	1, // [1:5] is the sub-list for method input_type
+	7, // 5: Auth.VerifyEmail:input_type -> VerifyEmailReq
+	2, // 6: Auth.Register:output_type -> AuthRes
+	2, // 7: Auth.Login:output_type -> AuthRes
+	2, // 8: Auth.Refresh:output_type -> AuthRes
+	6, // 9: Auth.Validate:output_type -> ValidateTokenRes
+	8, // 10: Auth.VerifyEmail:output_type -> VerifyEmailRes
+	6, // [6:11] is the sub-list for method output_type
+	1, // [1:6] is the sub-list for method input_type
 	1, // [1:1] is the sub-list for extension type_name
 	1, // [1:1] is the sub-list for extension extendee
 	0, // [0:1] is the sub-list for field type_name
@@ -514,7 +621,7 @@ func file_proto_auth_auth_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_auth_auth_proto_rawDesc), len(file_proto_auth_auth_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   7,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

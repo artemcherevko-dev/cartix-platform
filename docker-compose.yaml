@@ -4,42 +4,272 @@ services:
     container_name: shop-postgres
     environment:
       POSTGRES_DB: shop
-      POSTGRES_USER: shop
-      POSTGRES_PASSWORD: shop
+      POSTGRES_PASSWORD: postgres
     ports:
-      - "5432:5432"
+      - "5432"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d shop" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-  redis:
-    image: redis:latest
-    container_name: shop-redis
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
+      - postgres_data:/var/lib/postgresql
+      - ./deployments/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+
   nats:
     image: nats:latest
     container_name: nats-server
     ports:
-      - "4222:4222"
-      - "8222:8222"
-      - "6222:6222"
+      - "4222"
+      - "8222"
+      - "6222"
     volumes:
       - nats_data:/data
     command: [ "-js", "-sd", "/data", "-m", "8222" ]
     restart: unless-stopped
 
+  redis:
+    image: redis:latest
+    container_name: auth-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  auth-service:
+    build:
+      context: .
+      dockerfile: ./services/auth/Dockerfile
+    container_name: auth-service
+    env_file:
+      - .env.prod
+    environment: &telemetry-env
+      METRICS_PORT: "9090"
+      OTEL_EXPORTER_OTLP_ENDPOINT: alloy:4317
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_started
+      redis:
+        condition: service_healthy
+    ports:
+      - "${GRPC_AUTH_PORT}"
+    restart: unless-stopped
+
+  profile-service:
+    build:
+      context: .
+      dockerfile: ./services/profile/Dockerfile
+    container_name: profile-service
+    env_file:
+      - .env.prod
+    environment: *telemetry-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_started
+    ports:
+      - "${GRPC_PROFILE_PORT}"
+    restart: unless-stopped
+
+  catalog-service:
+    build:
+      context: .
+      dockerfile: ./services/catalog/Dockerfile
+    container_name: catalog-service
+    env_file:
+      - .env.prod
+    environment: *telemetry-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "${GRPC_CATALOG_PORT}"
+    restart: unless-stopped
+
+  payments-service:
+    build:
+      context: .
+      dockerfile: ./services/payments/Dockerfile
+    container_name: payments-service
+    env_file:
+      - .env.prod
+    environment: *telemetry-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_started
+    ports:
+      - "${GRPC_PAYMENTS_PORT}:${GRPC_PAYMENTS_PORT}"
+      - "${PAYMENTS_HTTP_PORT}:${PAYMENTS_HTTP_PORT}"
+    restart: unless-stopped
+
+  order-service:
+    build:
+      context: .
+      dockerfile: ./services/order/Dockerfile
+    container_name: order-service
+    env_file:
+      - .env.prod
+    environment: *telemetry-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      nats:
+        condition: service_started
+      catalog-service:
+        condition: service_started
+      payments-service:
+        condition: service_started
+    ports:
+      - "${GRPC_ORDER_PORT}"
+    restart: unless-stopped
+
+  notification-service:
+    build:
+      context: .
+      dockerfile: ./services/notification/Dockerfile
+    container_name: notification-service
+    env_file:
+      - .env.prod
+    environment: *telemetry-env
+    depends_on:
+      nats:
+        condition: service_started
+      redis:
+        condition: service_healthy
+      order-service:
+        condition: service_started
+    restart: unless-stopped
+
   gateway:
     build:
-      context: ./services/gateway
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./services/gateway/Dockerfile
     container_name: api-gateway
+    env_file:
+      - .env.prod
+    environment: *telemetry-env
+    depends_on:
+      auth-service:
+        condition: service_started
+      profile-service:
+        condition: service_started
+      catalog-service:
+        condition: service_started
+      payments-service:
+        condition: service_started
+      order-service:
+        condition: service_started
+      notification-service:
+        condition: service_started
     ports:
-      - "80:3000"
+      - "80:${GATEWAY_PORT}"
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:v3.8.0
+    volumes:
+      - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command: ["--config.file=/etc/prometheus/prometheus.yml", "--storage.tsdb.path=/prometheus"]
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:12.4.0
+    ports:
+      - "3001:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_PLUGINS_PREINSTALL: grafana-postgresql-datasource
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on: [prometheus, loki, tempo]
+    restart: unless-stopped
+
+  alloy:
+    image: grafana/alloy:v1.12.0
+    command: ["run", "/etc/alloy/config.alloy", "--server.http.listen-addr=0.0.0.0:12345"]
+    volumes:
+      - ./observability/alloy/config.alloy:/etc/alloy/config.alloy:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    depends_on: [loki, tempo]
+    restart: unless-stopped
+
+  loki:
+    image: grafana/loki:3.6.3
+    command: ["-config.file=/etc/loki/config.yml"]
+    volumes:
+      - ./observability/loki/loki.yml:/etc/loki/config.yml:ro
+      - loki_data:/loki
+    restart: unless-stopped
+
+  tempo:
+    image: grafana/tempo:2.9.0
+    command: ["-config.file=/etc/tempo/config.yml"]
+    volumes:
+      - ./observability/tempo/tempo.yml:/etc/tempo/config.yml:ro
+      - tempo_data:/var/tempo
+    restart: unless-stopped
+
+  node-exporter:
+    image: prom/node-exporter:v1.9.1
+    command: ["--path.rootfs=/host"]
+    volumes:
+      # Docker Desktop does not support Linux mount propagation flags such as
+      # rslave. A read-only root mount is sufficient for node-exporter here.
+      - /:/host:ro
+    restart: unless-stopped
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.52.1
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    restart: unless-stopped
+
+  redis-exporter:
+    image: oliver006/redis_exporter:v1.80.1
+    environment:
+      REDIS_ADDR: redis://redis:6379
+    depends_on: [redis]
+    restart: unless-stopped
+
+  postgres-exporter:
+    image: quay.io/prometheuscommunity/postgres-exporter:v0.19.1
+    environment:
+      DATA_SOURCE_NAME: postgresql://postgres:${POSTGRES_PASSWORD:-postgres}@postgres:5432/postgres?sslmode=disable
+    depends_on: [postgres]
+    restart: unless-stopped
+
+  nats-exporter:
+    image: natsio/prometheus-nats-exporter:latest
+    command: ["-varz", "-connz", "-jsz", "", "http://nats:8222"]
+    depends_on: [nats]
     restart: unless-stopped
 
 volumes:
   redis_data:
   postgres_data:
   nats_data:
-
+  prometheus_data:
+  grafana_data:
+  loki_data:
+  tempo_data:
