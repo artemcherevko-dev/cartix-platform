@@ -14,6 +14,7 @@ import (
 	"catalog/internal/db"
 
 	catalogpb "proto/catalog"
+	telemetry "shared/metrics"
 
 	"google.golang.org/grpc"
 )
@@ -38,6 +39,21 @@ func Run(cfg *config.Config) error {
 	)
 	defer cancel()
 
+	obs, err := telemetry.New(ctx, telemetry.ConfigFromEnv("catalog-service"))
+	if err != nil {
+		return err
+	}
+	if err := obs.Start(); err != nil {
+		return err
+	}
+	defer func() {
+		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), shutdownTimeout)
+		defer shutdownCancel()
+		if err := obs.Shutdown(shutdownCtx); err != nil {
+			log.Printf("[CATALOG] telemetry shutdown: %v", err)
+		}
+	}()
+
 	repo := db.NewRepo(gormDB)
 
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%s", cfg.GRPCPort))
@@ -45,7 +61,7 @@ func Run(cfg *config.Config) error {
 		return err
 	}
 
-	grpcServer := grpc.NewServer()
+	grpcServer := grpc.NewServer(grpc.StatsHandler(obs.GRPCStatsHandler()), grpc.UnaryInterceptor(telemetry.UnaryServerInterceptor()))
 	catalogpb.RegisterCatalogServer(grpcServer, NewHandler(repo))
 
 	serveErr := make(chan error, 1)

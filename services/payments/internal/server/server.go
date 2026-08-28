@@ -14,6 +14,7 @@ import (
 
 	natsclient "nats"
 	paymentspb "proto/payments"
+	telemetry "shared/metrics"
 
 	"github.com/stripe/stripe-go/v85"
 	"google.golang.org/grpc"
@@ -48,6 +49,21 @@ func Run(cfg *config.Config) error {
 		syscall.SIGTERM,
 	)
 	defer cancel()
+
+	obs, err := telemetry.New(ctx, telemetry.ConfigFromEnv("payments-service"))
+	if err != nil {
+		return err
+	}
+	if err := obs.Start(); err != nil {
+		return err
+	}
+	defer func() {
+		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), shutdownTimeout)
+		defer shutdownCancel()
+		if err := obs.Shutdown(shutdownCtx); err != nil {
+			log.Printf("[PAYMENTS] telemetry shutdown: %v", err)
+		}
+	}()
 
 	if err := paymentsnats.InitStreams(ctx, natsClient); err != nil {
 		return err
@@ -89,7 +105,7 @@ func Run(cfg *config.Config) error {
 	if err != nil {
 		return err
 	}
-	grpcServer := grpc.NewServer()
+	grpcServer := grpc.NewServer(grpc.StatsHandler(obs.GRPCStatsHandler()), grpc.UnaryInterceptor(telemetry.UnaryServerInterceptor()))
 	paymentspb.RegisterPaymentsServer(grpcServer, paymentsHandler)
 
 	httpErr := make(chan error, 1)

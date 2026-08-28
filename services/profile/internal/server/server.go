@@ -12,6 +12,7 @@ import (
 	"profile/internal/db"
 	"profile/internal/nats"
 	profilepb "proto/profile"
+	telemetry "shared/metrics"
 	"syscall"
 	"time"
 
@@ -48,6 +49,22 @@ func Run(cfg *config.Config) {
 		syscall.SIGTERM,
 	)
 	defer cancel()
+	obs, err := telemetry.New(ctx, telemetry.ConfigFromEnv("profile-service"))
+	if err != nil {
+		log.Printf("[PROFILE] telemetry initialization: %v", err)
+		return
+	}
+	if err := obs.Start(); err != nil {
+		log.Printf("[PROFILE] telemetry start: %v", err)
+		return
+	}
+	defer func() {
+		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), shutdownTimeout)
+		defer shutdownCancel()
+		if err := obs.Shutdown(shutdownCtx); err != nil {
+			log.Printf("[PROFILE] telemetry shutdown: %v", err)
+		}
+	}()
 	consumer, err := nats.InitConsumer(ctx, natsClient)
 	if err != nil {
 		return
@@ -71,7 +88,7 @@ func Run(cfg *config.Config) {
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
-	grpcServer := grpc.NewServer()
+	grpcServer := grpc.NewServer(grpc.StatsHandler(obs.GRPCStatsHandler()), grpc.UnaryInterceptor(telemetry.UnaryServerInterceptor()))
 	h := NewHandler(service)
 	profilepb.RegisterProfileServer(grpcServer, h)
 

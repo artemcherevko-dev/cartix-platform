@@ -1,0 +1,11 @@
+{
+    "schema_version": 2,
+    "commit": "a19772b87da716c1d15116a8a5b56526374a6ce4",
+    "indexed_at": "2026-08-27T21:06:13Z",
+    "project": "Volumes-PROJECTS-GoLandProjects-cartix-platform",
+    "nodes": 980,
+    "edges": 2523,
+    "original_size": 3276800,
+    "compressed_size": 509792,
+    "compression_level": 9
+}

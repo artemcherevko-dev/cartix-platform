@@ -14,6 +14,7 @@ import (
 	catalogpb "proto/catalog"
 	orderpb "proto/order"
 	paymentspb "proto/payments"
+	telemetry "shared/metrics"
 
 	"github.com/google/uuid"
 	"google.golang.org/grpc"
@@ -74,6 +75,21 @@ func Run(cfg *config.Config) error {
 	)
 	defer cancel()
 
+	obs, err := telemetry.New(ctx, telemetry.ConfigFromEnv("order-service"))
+	if err != nil {
+		return err
+	}
+	if err := obs.Start(); err != nil {
+		return err
+	}
+	defer func() {
+		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), shutdownTimeout)
+		defer shutdownCancel()
+		if err := obs.Shutdown(shutdownCtx); err != nil {
+			log.Printf("[ORDER] telemetry shutdown: %v", err)
+		}
+	}()
+
 	natsClient, err := natsclient.New(cfg.NATSUrl)
 	if err != nil {
 		return err
@@ -123,7 +139,7 @@ func Run(cfg *config.Config) error {
 		return err
 	}
 
-	grpcServer := grpc.NewServer()
+	grpcServer := grpc.NewServer(grpc.StatsHandler(obs.GRPCStatsHandler()), grpc.UnaryInterceptor(telemetry.UnaryServerInterceptor()))
 	orderpb.RegisterOrderServer(grpcServer, NewHandler(service))
 
 	serveErr := make(chan error, 1)

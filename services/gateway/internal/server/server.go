@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"gateway/internal/middleware"
 	"log"
@@ -10,6 +11,7 @@ import (
 	orderpb "proto/order"
 	paymentspb "proto/payments"
 	profilepb "proto/profile"
+	telemetry "shared/metrics"
 
 	"github.com/gin-gonic/gin"
 	"google.golang.org/grpc"
@@ -17,8 +19,21 @@ import (
 )
 
 func Run(addr string) {
+	obs, err := telemetry.New(context.Background(), telemetry.ConfigFromEnv("gateway"))
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err := obs.Start(); err != nil {
+		log.Fatal(err)
+	}
+	defer func() {
+		if err := obs.Shutdown(context.Background()); err != nil {
+			log.Printf("[GATEWAY] telemetry shutdown: %v", err)
+		}
+	}()
+
 	r := gin.Default()
-	err := r.SetTrustedProxies([]string{"127.0.0.1"})
+	err = r.SetTrustedProxies([]string{"127.0.0.1"})
 	if err != nil {
 		return
 	}
@@ -110,9 +125,13 @@ func Run(addr string) {
 			auth.GET("/validate", handler.ValidateToken)
 			auth.GET("/verify", handler.VerifyEmail)
 		}
+		catalog := v1.Group("catalog")
+		{
+			catalog.GET("products", handler.ListProducts)
+			catalog.GET("products/:id", handler.GetProduct)
+		}
 		protected := v1.Group("")
 		protected.Use(middleware.Auth())
-
 		{
 			protected.GET("/test", func(c *gin.Context) {
 				c.JSON(200, gin.H{"message": "Hello"})
@@ -135,11 +154,6 @@ func Run(addr string) {
 				cart.PUT("/", handler.UpdateCartItem)
 				cart.DELETE("/", handler.ClearCart)
 				cart.POST("/checkout", handler.CheckoutCart)
-			}
-			catalog := protected.Group("catalog")
-			{
-				catalog.GET("products", handler.ListProducts)
-				catalog.GET("products/:id", handler.GetProduct)
 			}
 		}
 

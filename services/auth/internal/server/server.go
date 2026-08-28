@@ -14,6 +14,7 @@ import (
 	"os/signal"
 	authpb "proto/auth"
 	redisclient "redis"
+	telemetry "shared/metrics"
 	"syscall"
 	"time"
 
@@ -65,6 +66,20 @@ func Run(cfg *config.Config) {
 		syscall.SIGTERM,
 	)
 	defer cancel()
+	obs, err := telemetry.New(ctx, telemetry.ConfigFromEnv("auth-service"))
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err := obs.Start(); err != nil {
+		log.Fatal(err)
+	}
+	defer func() {
+		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), shutdownTimeout)
+		defer shutdownCancel()
+		if err := obs.Shutdown(shutdownCtx); err != nil {
+			log.Printf("[AUTH] telemetry shutdown: %v", err)
+		}
+	}()
 	if err := nats.InitStreams(ctx, natsClient); err != nil {
 		log.Fatal(err)
 	}
@@ -78,7 +93,7 @@ func Run(cfg *config.Config) {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
-	grpcServer := grpc.NewServer()
+	grpcServer := grpc.NewServer(grpc.StatsHandler(obs.GRPCStatsHandler()), grpc.UnaryInterceptor(telemetry.UnaryServerInterceptor()))
 
 	h := NewHandler(repo, natsClient, verifyStore)
 

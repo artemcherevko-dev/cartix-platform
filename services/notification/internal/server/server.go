@@ -15,6 +15,7 @@ import (
 	"notification/internal/orders"
 	notificationstore "notification/internal/store"
 	redisclient "redis"
+	telemetry "shared/metrics"
 
 	"github.com/wneessen/go-mail"
 )
@@ -62,6 +63,20 @@ func Run(cfg *config.Config) error {
 		syscall.SIGTERM,
 	)
 	defer cancel()
+	obs, err := telemetry.New(ctx, telemetry.ConfigFromEnv("notification-service"))
+	if err != nil {
+		return err
+	}
+	if err := obs.Start(); err != nil {
+		return err
+	}
+	defer func() {
+		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), shutdownTimeout)
+		defer shutdownCancel()
+		if err := obs.Shutdown(shutdownCtx); err != nil {
+			log.Printf("[NOTIFICATION] telemetry shutdown: %v", err)
+		}
+	}()
 
 	consumer, err := nats.InitConsumer(ctx, natsClient)
 	if err != nil {
